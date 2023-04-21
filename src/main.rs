@@ -1,35 +1,50 @@
 mod hangman;
+mod statics;
 
-use hangman::game_handler::{GuessOutcome, Handler};
-use hangman::HangmanGame;
+use rand::seq::SliceRandom;
 
-const WORD: &'static str = "YOU";
-const MAX_INCORRECT_GUESSES: u32 = 10;
+use hangman::{
+    handler::{GuessOutcome, Handler},
+    HangmanGame,
+};
+use statics::{MAX_INCORRECT_GUESS_COUNT, WORDS};
 
-#[allow(dead_code)]
 fn main() {
-    let mut game = HangmanGame::new(WORD.to_string());
+    let random_word = WORDS
+        .choose(&mut rand::thread_rng())
+        .expect("Failed to fetch a random word.")
+        .to_string();
+
+    let mut game = HangmanGame::new(random_word);
+
+    // println!("[DEBUG] Your word is: {}", &game.word_to_guess);
+    println!("Your word is: {}", &game.format_word());
 
     loop {
-        println!("Your word is: {}", &game.format_word());
+        let prompt = format!(
+            "({}/{}) Letter",
+            game.incorrect_guess_count, MAX_INCORRECT_GUESS_COUNT
+        );
 
-        let outcome = game.handle_guess(MAX_INCORRECT_GUESSES);
+        let outcome = game
+            .handle_guess(Some(prompt.as_str()), MAX_INCORRECT_GUESS_COUNT)
+            .expect("Could not handle user input.");
 
         match outcome {
             GuessOutcome::Correct(_) => {
-                println!("Correct");
+                println!("Correct!   {}", game.format_word());
                 continue;
             }
             GuessOutcome::Incorrect => {
-                println!("Incorrect");
+                println!("Incorrect! {}", game.format_word());
                 continue;
             }
             GuessOutcome::GameWin => {
-                println!("WINNER!");
+                println!("Yay! The word was {}", game.word_to_guess);
                 break;
             }
             GuessOutcome::GameLose => {
-                println!("LOSE");
+                println!("YOU LOSE! The word was {}", game.word_to_guess);
                 break;
             }
         }
